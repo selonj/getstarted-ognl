@@ -1,6 +1,7 @@
 package com.selonj.getstarted.ognl;
 
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.Map;
 import ognl.Ognl;
 import org.junit.Test;
@@ -15,9 +16,29 @@ import static org.junit.Assert.assertThat;
  */
 public class ObjectFeaturesOnOgnlTest {
 
+  private final Map.Entry<String, String> entry = new AbstractMap.SimpleEntry<>("foo", "bar");
+
   @Test
-  public void callMethodOnAnyObjects() throws Exception {
-    Map.Entry<String, String> entry = new AbstractMap.SimpleEntry<>("foo", "bar");
+  public void readProperty() throws Exception {
+    assertThat((String) Ognl.getValue("key", CONTEXT_REQUIRED, entry), equalTo("foo"));
+  }
+
+  @Test
+  public void readPropertyBySubExpression() throws Exception {
+    Map context = Collections.singletonMap("property", "key");
+    assertThat((String) Ognl.getValue("#this[#property]", context, entry), equalTo("foo"));
+  }
+
+  @Test
+  public void propertyChecking() throws Exception {
+    assertThat((Boolean) Ognl.getValue("key in {'foo','<wrong>'}", CONTEXT_REQUIRED, entry),
+        equalTo(Boolean.TRUE));
+    assertThat((Boolean) Ognl.getValue("key in {'<unknown>','<wrong>'}", CONTEXT_REQUIRED, entry),
+        equalTo(Boolean.FALSE));
+  }
+
+  @Test
+  public void callMethods() throws Exception {
     assertThat((String) Ognl.getValue("getKey()", CONTEXT_REQUIRED, entry), equalTo("foo"));
   }
 
@@ -36,15 +57,5 @@ public class ObjectFeaturesOnOgnlTest {
   @Test
   public void callStaticMethods() throws Exception {
     assertThat((Integer) Ognl.getValue("@java.lang.Integer@valueOf(1)", OPTIONAL_ROOT), equalTo(1));
-  }
-
-  @Test
-  public void propertyChecking() throws Exception {
-    Map.Entry<String, String> entry = new AbstractMap.SimpleEntry<String, String>("foo", "bar");
-
-    assertThat((Boolean) Ognl.getValue("key in {'foo','<wrong>'}", CONTEXT_REQUIRED, entry),
-        equalTo(Boolean.TRUE));
-    assertThat((Boolean) Ognl.getValue("key in {'<unknown>','<wrong>'}", CONTEXT_REQUIRED, entry),
-        equalTo(Boolean.FALSE));
   }
 }
